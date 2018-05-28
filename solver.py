@@ -556,7 +556,7 @@ class Solver(object):
         
         with torch.no_grad():
             for i, (x_real, c_org) in enumerate(self.celeba_loader):
-
+                print(x_real, c_org)
                 # Prepare input images and target domain labels.
                 x_real = x_real.to(self.device)
                 c_celeba_list = self.create_labels(c_org, self.c_dim, 'CelebA', self.selected_attrs)

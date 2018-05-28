@@ -1,0 +1,1 @@
+python main.py --mode test --dataset Both --image_size 256 --c_dim 6 --c2_dim 8 --sample_dir stargan_both/samples --log_dir stargan_both/logs --model_save_dir stargan_both/models --result_dir stargan_both/results
