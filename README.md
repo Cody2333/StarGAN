@@ -25,6 +25,13 @@ IEEE Conference on Computer Vision and Pattern Recognition ([CVPR](http://cvpr20
 
 ## Usage
 
+### 利用两个数据库训练之后，新的表情图片的生成
+
+1. 下载200000 checkpoint 的模型文件到 stargan_both/models/文件夹
+2. 将需要生成表情的图片放到 stargan_both/samples/文件夹
+3. 执行测试脚本 ./both_test.sh
+
+
 ### 1. Cloning the repository
 ```bash
 $ git clone https://github.com/yunjey/StarGAN.git
