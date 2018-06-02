@@ -47,13 +47,11 @@ class CelebA(data.Dataset):
                     idx = self.attr2idx[attr_name]
                     label.append(values[idx] == '1')
                 self.train_dataset.append([filename, label])
-            print(self.train_dataset[0])
         elif self.mode == 'test':
             filenames = os.listdir(self.sample_dir)
             default_label = [False for i in range(6)]
             for filename in filenames:
                 self.test_dataset.append([filename, default_label])
-            print(self.test_dataset[0])
         print('Finished preprocessing the CelebA dataset...')
 
     def __getitem__(self, index):

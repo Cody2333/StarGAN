@@ -8,6 +8,7 @@ import numpy as np
 import os
 import time
 import datetime
+from data_loader import get_loader
 
 
 class Solver(object):
@@ -19,7 +20,7 @@ class Solver(object):
         # Data loader.
         self.celeba_loader = celeba_loader
         self.rafd_loader = rafd_loader
-
+        self.config = config
         # Model configurations.
         self.c_dim = config.c_dim
         self.c2_dim = config.c2_dim
@@ -102,6 +103,7 @@ class Solver(object):
         D_path = os.path.join(self.model_save_dir, '{}-D.ckpt'.format(resume_iters))
         self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
         self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
+        print('Done loading the trained models')
 
     def build_tensorboard(self):
         """Build a tensorboard logger."""
@@ -549,34 +551,32 @@ class Solver(object):
                 save_image(self.denorm(x_concat.data.cpu()), result_path, nrow=1, padding=0)
                 print('Saved real and fake images into {}...'.format(result_path))
 
-    def test_multi(self):
+    def test_multi(self, sample_dir, result_dir):
         """Translate images using StarGAN trained on multiple datasets."""
         # Load the trained generator.
-        self.restore_model(self.test_iters)
-        
+        # self.restore_model(self.test_iters)
+        config = self.config
+        test_loader = get_loader(config.celeba_image_dir, config.attr_path, config.selected_attrs,
+                            config.celeba_crop_size, config.image_size, config.batch_size,
+                            'CelebA', config.mode, sample_dir, config.num_workers)
         with torch.no_grad():
-            for i, (x_real, c_org) in enumerate(self.celeba_loader):
-                print(x_real, c_org)
+            for i, (x_real, c_org) in enumerate(test_loader):
                 # Prepare input images and target domain labels.
                 x_real = x_real.to(self.device)
-                c_celeba_list = self.create_labels(c_org, self.c_dim, 'CelebA', self.selected_attrs)
                 c_rafd_list = self.create_labels(c_org, self.c2_dim, 'RaFD')
                 zero_celeba = torch.zeros(x_real.size(0), self.c_dim).to(self.device)            # Zero vector for CelebA.
-                zero_rafd = torch.zeros(x_real.size(0), self.c2_dim).to(self.device)             # Zero vector for RaFD.
-                mask_celeba = self.label2onehot(torch.zeros(x_real.size(0)), 2).to(self.device)  # Mask vector: [1, 0].
                 mask_rafd = self.label2onehot(torch.ones(x_real.size(0)), 2).to(self.device)     # Mask vector: [0, 1].
 
                 # Translate images.
                 x_fake_list = [x_real]
-                for c_celeba in c_celeba_list:
-                    c_trg = torch.cat([c_celeba, zero_rafd, mask_celeba], dim=1)
-                    x_fake_list.append(self.G(x_real, c_trg))
                 for c_rafd in c_rafd_list:
                     c_trg = torch.cat([zero_celeba, c_rafd, mask_rafd], dim=1)
                     x_fake_list.append(self.G(x_real, c_trg))
 
-                # Save the translated images.
                 x_concat = torch.cat(x_fake_list, dim=3)
-                result_path = os.path.join(self.result_dir, '{}-images.jpg'.format(i+1))
-                save_image(self.denorm(x_concat.data.cpu()), result_path, nrow=1, padding=0)
+                ii = 0
+                for l in x_fake_list:
+                    result_path = os.path.join(result_dir, '{}-images.jpg'.format(ii+1))
+                    save_image(self.denorm(l.data.cpu()), result_path, nrow=1, padding=0)
+                    ii = ii + 1
                 print('Saved real and fake images into {}...'.format(result_path))
